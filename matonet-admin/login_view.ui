@@ -47,7 +47,7 @@
    <item row="12" column="0" colspan="3">
     <widget class="QLineEdit" name="password_input">
      <property name="text">
-      <string>super secret matonet password</string>
+      <string>test</string>
      </property>
      <property name="echoMode">
       <enum>QLineEdit::Password</enum>

@@ -25,9 +25,9 @@
     </widget>
    </item>
    <item row="18" column="0">
-    <widget class="QPushButton" name="exit_button">
+    <widget class="QPushButton" name="back_button">
      <property name="text">
-      <string>Exit</string>
+      <string>Back</string>
      </property>
     </widget>
    </item>

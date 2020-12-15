@@ -4,11 +4,13 @@ __license__ = "0BSD"
 
 import sys
 import os
+import json
 from logger import log
 from PyQt5 import QtWidgets, uic
-import login_view, product_view, user_view, add_user_view
+from PyQt5.QtWidgets import QMessageBox
+import login_view, product_view, user_view, add_user_view, add_product_view
 import requests
-
+from passlib.hash import pbkdf2_sha256
 
 class MatonetAdmin(QtWidgets.QWidget):
 
@@ -46,12 +48,14 @@ class MatonetAdmin(QtWidgets.QWidget):
         self.product_widget = product_view.ProductView()
         self.user_widget = user_view.UserView()
         self.add_user_widget = add_user_view.AddUserView()
+        self.add_product_widget = add_product_view.AddProductView()
 
         # Add QWidget instances to stackedWidget
         self.stacked_widget.addWidget(self.login_widget)
         self.stacked_widget.addWidget(self.product_widget)
         self.stacked_widget.addWidget(self.user_widget)
         self.stacked_widget.addWidget(self.add_user_widget)
+        self.stacked_widget.addWidget(self.add_product_widget)
 
         # Connect exit_buttons
         self.login_widget.exit_button.clicked.connect(
@@ -60,8 +64,11 @@ class MatonetAdmin(QtWidgets.QWidget):
             self.on_exit_button_clicked)
         self.user_widget.exit_button.clicked.connect(
             self.on_exit_button_clicked)
-        self.add_user_widget.exit_button.clicked.connect(
-            self.on_exit_button_clicked)
+        self.add_user_widget.back_button.clicked.connect(
+            self.on_user_clicked)
+        self.add_product_widget.back_button.clicked.connect(
+            self.on_product_clicked)
+
         # Connect signals
         self.login_widget.login_signal.connect(
             self.on_login_clicked)
@@ -69,6 +76,8 @@ class MatonetAdmin(QtWidgets.QWidget):
             self.on_user_clicked)
         self.product_widget.update_button.clicked.connect(
             self.on_update_clicked)
+        self.product_widget.add_button.clicked.connect(
+            self.on_add_button_clicked)
         self.user_widget.product_button.clicked.connect(
             self.on_product_clicked)
         self.user_widget.add_button.clicked.connect(
@@ -77,33 +86,49 @@ class MatonetAdmin(QtWidgets.QWidget):
             self.on_update_clicked)
         self.add_user_widget.create_user_button_signal.connect(
             self.create_user)
+        self.add_product_widget.create_product_button_signal.connect(
+            self.create_product)
+
+    def show_warning(self, e):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("Invalid values")
+        msg.setText("Check the values you entered\n" + str(e))
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
     def delete_static_fields(self, row):
         if self.stacked_widget.currentWidget() is self.product_widget:
             row.pop("product_id", None)
         if self.stacked_widget.currentWidget() is self.user_widget:
             row.pop("user_id", None)
-
+            row["password"] = pbkdf2_sha256.hash(row["password"])
         row.pop("created_at", None)
         row.pop("updated_at", None)
 
     def login(self, login_info):
+        self.login_info = login_info
+        self.url = "http://" + login_info["address"] + ":5000/"
+        response = requests.post(self.url + "token", json={
+            "username": login_info["username"], "password": login_info["password"]}, timeout=2)
+        log.info(response.status_code)
+        if response.status_code == 401:
+            self.show_warning("Invalid password or username")
+        self.tokens = response.json()
+
+    def create_user(self, user_info):
+        user_info["password"] = pbkdf2_sha256.hash(user_info["password"])
         try:
-            self.login_info = login_info
-            self.url = "http://" + login_info["address"] + ":5000/"
-            response = requests.post(self.url + "token", json={
-                "username": login_info["username"], "password": login_info["password"]}, timeout=2)
+            headers = {"Authorization": "Bearer %s" % self.tokens["access_token"]}
+            response = requests.post(self.url + "users", json=user_info, headers=headers, timeout=2)
             log.info(response.status_code)
-            self.tokens = response.json()
         except Exception:
             pass
 
-    def create_user(self, user_info):
-        print(user_info)
+    def create_product(self, product_info):
         try:
-            headers = {"Authorization": "Bearer %s" % self.tokens["refresh_token"]}
-            response = requests.post(self.url + "users", json={
-                "username": user_info["username"], "password": user_info["password"]}, headers=headers, timeout=2)
+            headers = {"Authorization": "Bearer %s" % self.tokens["access_token"]}
+            response = requests.post(self.url + "products", json=product_info, headers=headers, timeout=2)
             log.info(response.status_code)
         except Exception:
             pass
@@ -121,7 +146,11 @@ class MatonetAdmin(QtWidgets.QWidget):
         requests.post(self.url + "revoke", json={}, headers=headers)
 
     def fetch_from_db(self, endpoint):
-        headers = {"Authorization": "Bearer %s" % self.tokens["access_token"]}
+        try:
+            headers = {"Authorization": "Bearer %s" % self.tokens["access_token"]}
+        except KeyError as e:
+            self.show_warning(e)
+            return
         response = requests.get(self.url + endpoint, headers=headers)
         if response.status_code == 200:
             return response.json()
@@ -165,7 +194,10 @@ class MatonetAdmin(QtWidgets.QWidget):
         for row in range(len(rows_to_update)):
             if self.stacked_widget.currentWidget() is self.product_widget:
                 endpoint = "product"
-                index = int(rows_to_update[row]["product_id"])
+                try:
+                    index = int(rows_to_update[row]["product_id"])
+                except KeyError:
+                    return
             if self.stacked_widget.currentWidget() is self.user_widget:
                 endpoint = "user"
                 try:
@@ -213,7 +245,7 @@ class MatonetAdmin(QtWidgets.QWidget):
 
     def on_add_button_clicked(self):
         if self.stacked_widget.currentWidget() is self.product_widget:
-            return
+            self.stacked_widget.setCurrentWidget(self.add_product_widget)
         if self.stacked_widget.currentWidget() is self.user_widget:
             self.stacked_widget.setCurrentWidget(self.add_user_widget)
 

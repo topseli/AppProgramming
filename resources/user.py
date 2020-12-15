@@ -85,7 +85,7 @@ class UserResource(Resource):
         user.user_id = user.user_id
         user.role = data.get("role") or user.role
         user.username = data.get("username") or user.username
-        user.password = data.get("password") or user.password
+        user.password = user.password
         user.is_active = data.get("is_active") or user.is_active
         user.created_at = user.created_at
         user.updated_at = user.updated_at

@@ -76,7 +76,7 @@ class UserView(QtWidgets.QWidget):
         for column in range(self.table_widget.columnCount()):
             item = QtWidgets.QTableWidgetItem()
             if column == 3:
-                item.setText(str(pbkdf2_sha256.hash(row_data[self.keys[column]])))
+                item.setText(str(row_data[self.keys[column]]))
             else:
                 item.setText(str(row_data[self.keys[column]]))
             self.table_widget.setItem(row_data["user_id"], column, item)

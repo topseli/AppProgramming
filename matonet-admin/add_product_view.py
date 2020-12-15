@@ -12,16 +12,16 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QMessageBox
 
 
-class AddUserView(QtWidgets.QWidget):
+class AddProductView(QtWidgets.QWidget):
 
-    create_user_button_signal = pyqtSignal(dict)
+    create_product_button_signal = pyqtSignal(dict)
 
     def __init__(self):
-        super(AddUserView, self).__init__()
+        super(AddProductView, self).__init__()
         self.init_ui()
 
     def init_ui(self):
-        path = os.path.dirname(os.path.abspath(__file__)) + '/add_user_view.ui'
+        path = os.path.dirname(os.path.abspath(__file__)) + '/add_product_view.ui'
         uic.loadUi(path, self)
 
     def show_warning(self, e):
@@ -34,17 +34,20 @@ class AddUserView(QtWidgets.QWidget):
         msg.exec_()
 
     @pyqtSlot()
-    def on_create_user_button_clicked(self):
-        user_info = {
-            "username": self.username_input.text(),
-            "password": self.password_input.text()
+    def on_create_product_button_clicked(self):
+        product_info = {
+            "product_name": self.product_name_input.text(),
+            "description": self.description_input.text(),
+            "stock": int(self.ammount_input.text()),
+            "price": float(self.price_input.text()),
+            "size": int(self.size_input.text()),
         }
-        self.create_user_button_signal.emit(user_info)
+        self.create_product_button_signal.emit(product_info)
 
 
 def run():
     APP = QtWidgets.QApplication(sys.argv)
-    APP_WINDOW = AddUserView()
+    APP_WINDOW = AddProductView()
     APP_WINDOW.back_button.clicked.connect(sys.exit)
     APP_WINDOW.show()
     APP.exec_()

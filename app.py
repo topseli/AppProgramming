@@ -9,6 +9,7 @@ from resources.token import TokenResource, RefreshResource, RevokeResource
 from resources.pages import LoginResource, OrderResource, ConfirmResource
 from resources.product import ProductResource, ProductListResource
 from resources.user import UserResource, UserListResource
+from resources.storage import StorageResource, StorageListResource
 
 
 def create_app():
