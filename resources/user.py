@@ -6,6 +6,8 @@ from http import HTTPStatus
 from models.user import User
 from schemas.user import UserSchema
 
+# TODO UserListResource
+
 user_schema = UserSchema()
 user_list_schema = UserSchema(many=True)
 
@@ -24,18 +26,6 @@ class UserListResource(Resource):
 
         return user_list_schema.dump(users).data, HTTPStatus.OK
 
-    @jwt_required
-    def post(self):
-
-        json_data = request.get_json()
-
-        current_user = get_jwt_identity()
-
-        # Only for admins
-        if current_user is None:
-            return {'message': 'Access is not allowed'}, HTTPStatus.FORBIDDEN
-
-        data, errors = user_schema.load(data=json_data)
 
         if errors:
             return {'message': 'Validation errors', 'errors': errors}, HTTPStatus.BAD_REQUEST
@@ -49,9 +39,9 @@ class UserListResource(Resource):
 class UserResource(Resource):
 
     @jwt_required
-    def get(self, user_id):
+    def get(self, username):
 
-        user = User.get_by_id(user_id=user_id)
+        user = User.get_by_username(username=username)
 
         current_user = get_jwt_identity()
 
@@ -89,4 +79,4 @@ class UserResource(Resource):
         user.updated_at = user.updated_at
         user.save()
 
-        return {'message': 'Updated'}, HTTPStatus.OK
+        return user_schema.dump(user).data, HTTPStatus.OK
