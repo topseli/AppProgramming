@@ -149,7 +149,6 @@ class MatonetAdmin(QtWidgets.QWidget):
                 for key in row_data.keys():
                     if db_data[0][key] != row_data[key]:
                         ui_data.append(row_data)
-
         return ui_data
 
     def load_table(self):

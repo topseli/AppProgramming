@@ -9,6 +9,7 @@ import sys
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QMessageBox
+from passlib.hash import pbkdf2_sha256
 
 
 class UserView(QtWidgets.QWidget):
@@ -56,11 +57,11 @@ class UserView(QtWidgets.QWidget):
             item = self.table_widget.item(current_row, column)
             if item is not None and len(item.text()) > 0:
                 if column in (0, 1):
-                    if int(item.text()) > 0:
+                    if int(item.text()) >= 0:
                         row[self.keys[column]] = int(item.text())
                     else:
                         raise ValueError
-                if column == 4:
+                elif column == 4:
                     if item.text() == "True":
                         row[self.keys[column]] = True
                     else:
@@ -74,7 +75,10 @@ class UserView(QtWidgets.QWidget):
     def set_row(self, row_data):
         for column in range(self.table_widget.columnCount()):
             item = QtWidgets.QTableWidgetItem()
-            item.setText(str(row_data[self.keys[column]]))
+            if column == 3:
+                item.setText(str(pbkdf2_sha256.hash(row_data[self.keys[column]])))
+            else:
+                item.setText(str(row_data[self.keys[column]]))
             self.table_widget.setItem(row_data["user_id"], column, item)
 
 
