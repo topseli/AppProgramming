@@ -6,8 +6,6 @@ __license__ = "0BSD"
 
 import os
 import sys
-import requests
-from logger import log
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QMessageBox
@@ -25,9 +23,6 @@ class UserView(QtWidgets.QWidget):
         "updated_at"
     )
 
-    update_signal = pyqtSignal()
-    product_signal = pyqtSignal()
-
     def __init__(self):
         super(UserView, self).__init__()
         self.init_ui()
@@ -44,19 +39,43 @@ class UserView(QtWidgets.QWidget):
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
 
+    def row_count(self):
+        return self.table_widget.rowCount()
+
+    def get_row(self, current_row):
+        row = {
+            "user_id": 0,
+            "role": 0,
+            "username": "",
+            "password": "",
+            "is_active": False,
+            "created_at": "",
+            "updated_at": ""
+        }
+        for column in range(self.table_widget.columnCount()):
+            item = self.table_widget.item(current_row, column)
+            if item is not None and len(item.text()) > 0:
+                if column in (0, 1):
+                    if int(item.text()) > 0:
+                        row[self.keys[column]] = int(item.text())
+                    else:
+                        raise ValueError
+                if column == 4:
+                    if item.text() == "True":
+                        row[self.keys[column]] = True
+                    else:
+                        row[self.keys[column]] = False
+                else:
+                    row[self.keys[column]] = item.text()
+            else:
+                raise ValueError
+        return row
+
     def set_row(self, row_data):
         for column in range(self.table_widget.columnCount()):
             item = QtWidgets.QTableWidgetItem()
             item.setText(str(row_data[self.keys[column]]))
             self.table_widget.setItem(row_data["user_id"], column, item)
-
-    @pyqtSlot()
-    def on_product_button_clicked(self):
-        self.product_signal.emit()
-
-    @pyqtSlot()
-    def on_update_button_clicked(self):
-        self.update_signal.emit()
 
 
 def run():

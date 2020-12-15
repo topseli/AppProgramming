@@ -26,9 +26,27 @@ class UserListResource(Resource):
 
         return user_list_schema.dump(users).data, HTTPStatus.OK
 
+<<<<<<< HEAD
 
         if errors:
             return {'message': 'Validation errors', 'errors': errors}, HTTPStatus.BAD_REQUEST
+=======
+    @jwt_required
+    def post(self):
+
+        current_user = get_jwt_identity()
+
+        json_data = request.get_json()
+        data, errors = user_schema.load(data=json_data)
+        if errors:
+            return {"message": "Validation errors", "errors":  errors}, HTTPStatus.BAD_REQUEST
+
+        if current_user is None:
+            return {'message': 'Access is not allowed'}, HTTPStatus.FORBIDDEN
+
+        if User.get_by_username(data.get("username")):
+            return {"message": "Username already exists."}, HTTPStatus.BAD_REQUEST
+>>>>>>> ade6ccc859eaed83ad3b4b51d420e3d1f4b5884e
 
         user = User(**data)
         user.save()
@@ -70,9 +88,9 @@ class UserResource(Resource):
 
         if user is None:
             return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
-        user.id = user.user_id
+        user.user_id = user.user_id
         user.role = data.get("role") or user.role
-        user.name = data.get("username") or user.name
+        user.username = data.get("username") or user.username
         user.password = data.get("password") or user.password
         user.is_active = data.get("is_active") or user.is_active
         user.created_at = user.created_at
